@@ -217,7 +217,9 @@ class EditableTextBlock extends StatelessWidget {
 
     var baseIndent = 0.0;
 
-    if (attrs.containsKey(Attribute.codeBlock.key)) {
+    final isCheckbox = attrs[Attribute.list.key] == Attribute.checked ||
+        attrs[Attribute.list.key] == Attribute.unchecked;
+    if (isCheckbox || attrs.containsKey(Attribute.codeBlock.key)) {
       baseIndent = 32.0;
     }
 
