@@ -13,7 +13,6 @@ import 'default_styles.dart';
 import 'delegate.dart';
 import 'editor.dart';
 import 'link.dart';
-import 'style_widgets/bullet_point.dart';
 import 'style_widgets/checkbox_point.dart';
 import 'style_widgets/number_point.dart';
 import 'text_line.dart';
@@ -164,25 +163,6 @@ class EditableTextBlock extends StatelessWidget {
       Map<int, int> indentLevelCounts, int count) {
     final defaultStyles = QuillStyles.getStyles(context, false);
     final attrs = line.style.attributes;
-    if (attrs[Attribute.list.key] == Attribute.ol) {
-      return QuillNumberPoint(
-        index: index,
-        indentLevelCounts: indentLevelCounts,
-        count: count,
-        style: defaultStyles!.leading!.style,
-        attrs: attrs,
-        width: 32,
-        padding: 8,
-      );
-    }
-
-    if (attrs[Attribute.list.key] == Attribute.ul) {
-      return QuillBulletPoint(
-        style:
-            defaultStyles!.leading!.style.copyWith(fontWeight: FontWeight.bold),
-        width: 32,
-      );
-    }
 
     if (attrs[Attribute.list.key] == Attribute.checked) {
       return CheckboxPoint(
@@ -235,8 +215,7 @@ class EditableTextBlock extends StatelessWidget {
 
     var baseIndent = 0.0;
 
-    if (attrs.containsKey(Attribute.list.key) ||
-        attrs.containsKey(Attribute.codeBlock.key)) {
+    if (attrs.containsKey(Attribute.codeBlock.key)) {
       baseIndent = 32.0;
     }
 
