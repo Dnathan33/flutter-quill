@@ -327,7 +327,6 @@ class _TextLineState extends State<TextLine> {
     }
 
     return TextSpan(
-      text: textNode.value,
       children: [leading, whiteSpace, TextSpan(text: textNode.value)],
       style: _getInlineTextStyle(
           textNode, defaultStyles, nodeStyle, lineStyle, isLink),
