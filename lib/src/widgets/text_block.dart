@@ -134,6 +134,7 @@ class EditableTextBlock extends StatelessWidget {
           _buildLeading(context, line, index, indentLevelCounts, count),
           TextLine(
             line: line,
+            index: index,
             textDirection: textDirection,
             embedBuilder: embedBuilder,
             customStyleBuilder: customStyleBuilder,

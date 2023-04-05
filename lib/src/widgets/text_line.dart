@@ -317,7 +317,7 @@ class _TextLineState extends State<TextLine> {
 
     var leading = const TextSpan();
     if (attrs[Attribute.list.key] == Attribute.ol) {
-      leading = TextSpan(text: '${widget.index.toString()}.');
+      leading = TextSpan(text: '${widget.index}.');
     } else if (attrs[Attribute.list.key] == Attribute.ul) {
       leading = TextSpan(
         text: '•',
