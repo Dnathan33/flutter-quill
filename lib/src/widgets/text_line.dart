@@ -297,23 +297,18 @@ class _TextLineState extends State<TextLine> {
     final isLink = nodeStyle.containsKey(Attribute.link.key) &&
         nodeStyle.attributes[Attribute.link.key]!.value != null;
     final attrs = widget.line.style.attributes;
-    const whiteSpace = TextSpan(text: ' ');
+    const whiteSpace = ' ';
 
-    var leading = const TextSpan();
+    var leading = '';
     if (attrs[Attribute.list.key] == Attribute.ol) {
-      leading = TextSpan(text: '${widget.index.toString()}.');
+      leading = '${widget.index}.$whiteSpace';
     } else if (attrs[Attribute.list.key] == Attribute.ul) {
-      leading = TextSpan(
-        text: '•',
-        style:
-            defaultStyles.leading!.style.copyWith(fontWeight: FontWeight.bold),
-      );
+      leading = '•$whiteSpace';
     }
 
     return TextSpan(
-      children: [leading, whiteSpace, TextSpan(text: textNode.value)],
-      style: _getInlineTextStyle(
-          textNode, defaultStyles, nodeStyle, lineStyle, isLink),
+      text: '$leading${textNode.value}',
+      style: _getInlineTextStyle(textNode, defaultStyles, nodeStyle, lineStyle, isLink),
       recognizer: isLink && canLaunchLinks ? _getRecognizer(node) : null,
       mouseCursor: isLink && canLaunchLinks ? SystemMouseCursors.click : null,
     );
