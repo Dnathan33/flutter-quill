@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
-// ignore: unnecessary_import
-import 'dart:typed_data';
 import 'dart:ui' as ui hide TextStyle;
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -24,6 +23,7 @@ import '../models/documents/nodes/node.dart';
 import '../models/documents/style.dart';
 import '../models/structs/offset_value.dart';
 import '../models/structs/vertical_spacing.dart';
+import '../models/themes/quill_dialog_theme.dart';
 import '../utils/cast.dart';
 import '../utils/delta.dart';
 import '../utils/embeds.dart';
@@ -42,44 +42,49 @@ import 'raw_editor/raw_editor_state_text_input_client_mixin.dart';
 import 'text_block.dart';
 import 'text_line.dart';
 import 'text_selection.dart';
+import 'toolbar/link_style_button2.dart';
 import 'toolbar/search_dialog.dart';
 
 class RawEditor extends StatefulWidget {
-  const RawEditor(
-      {required this.controller,
-      required this.focusNode,
-      required this.scrollController,
-      required this.scrollBottomInset,
-      required this.cursorStyle,
-      required this.selectionColor,
-      required this.selectionCtrls,
-      required this.embedBuilder,
-      Key? key,
-      this.scrollable = true,
-      this.padding = EdgeInsets.zero,
-      this.readOnly = false,
-      this.placeholder,
-      this.onLaunchUrl,
-      this.contextMenuBuilder = defaultContextMenuBuilder,
-      this.showSelectionHandles = false,
-      bool? showCursor,
-      this.textCapitalization = TextCapitalization.none,
-      this.maxHeight,
-      this.minHeight,
-      this.maxContentWidth,
-      this.customStyles,
-      this.customShortcuts,
-      this.customActions,
-      this.expands = false,
-      this.autoFocus = false,
-      this.keyboardAppearance = Brightness.light,
-      this.enableInteractiveSelection = true,
-      this.scrollPhysics,
-      this.linkActionPickerDelegate = defaultLinkActionPickerDelegate,
-      this.customStyleBuilder,
-      this.floatingCursorDisabled = false,
-      this.onImagePaste})
-      : assert(maxHeight == null || maxHeight > 0, 'maxHeight cannot be null'),
+  const RawEditor({
+    required this.controller,
+    required this.focusNode,
+    required this.scrollController,
+    required this.scrollBottomInset,
+    required this.cursorStyle,
+    required this.selectionColor,
+    required this.selectionCtrls,
+    required this.embedBuilder,
+    Key? key,
+    this.scrollable = true,
+    this.padding = EdgeInsets.zero,
+    this.readOnly = false,
+    this.placeholder,
+    this.onLaunchUrl,
+    this.contextMenuBuilder = defaultContextMenuBuilder,
+    this.showSelectionHandles = false,
+    bool? showCursor,
+    this.textCapitalization = TextCapitalization.none,
+    this.maxHeight,
+    this.minHeight,
+    this.maxContentWidth,
+    this.customStyles,
+    this.customShortcuts,
+    this.customActions,
+    this.expands = false,
+    this.autoFocus = false,
+    this.enableUnfocusOnTapOutside = true,
+    this.keyboardAppearance = Brightness.light,
+    this.enableInteractiveSelection = true,
+    this.scrollPhysics,
+    this.linkActionPickerDelegate = defaultLinkActionPickerDelegate,
+    this.customStyleBuilder,
+    this.customRecognizerBuilder,
+    this.floatingCursorDisabled = false,
+    this.onImagePaste,
+    this.customLinkPrefixes = const <String>[],
+    this.dialogTheme,
+  })  : assert(maxHeight == null || maxHeight > 0, 'maxHeight cannot be null'),
         assert(minHeight == null || minHeight >= 0, 'minHeight cannot be null'),
         assert(maxHeight == null || minHeight == null || maxHeight >= minHeight,
             'maxHeight cannot be null'),
@@ -94,6 +99,7 @@ class RawEditor extends StatefulWidget {
   final ScrollController scrollController;
   final bool scrollable;
   final double scrollBottomInset;
+  final bool enableUnfocusOnTapOutside;
 
   /// Additional space around the editor contents.
   final EdgeInsetsGeometry padding;
@@ -187,6 +193,7 @@ class RawEditor extends StatefulWidget {
   /// horizontally centered. This is mostly useful on devices with wide screens.
   final double? maxContentWidth;
 
+  /// Allows to override [DefaultStyles].
   final DefaultStyles? customStyles;
 
   /// Whether this widget's height will be sized to fill its parent.
@@ -242,14 +249,26 @@ class RawEditor extends StatefulWidget {
 
   final Future<String?> Function(Uint8List imageBytes)? onImagePaste;
 
-  final Map<LogicalKeySet, Intent>? customShortcuts;
+  /// Contains user-defined shortcuts map.
+  ///
+  /// [https://docs.flutter.dev/development/ui/advanced/actions-and-shortcuts#shortcuts]
+  final Map<ShortcutActivator, Intent>? customShortcuts;
+
+  /// Contains user-defined actions.
+  ///
+  /// [https://docs.flutter.dev/development/ui/advanced/actions-and-shortcuts#actions]
   final Map<Type, Action<Intent>>? customActions;
 
   /// Builder function for embeddable objects.
   final EmbedsBuilder embedBuilder;
   final LinkActionPickerDelegate linkActionPickerDelegate;
   final CustomStyleBuilder? customStyleBuilder;
+  final CustomRecognizerBuilder? customRecognizerBuilder;
   final bool floatingCursorDisabled;
+  final List<String> customLinkPrefixes;
+
+  /// Configures the dialog theme.
+  final QuillDialogTheme? dialogTheme;
 
   @override
   State<StatefulWidget> createState() => RawEditorState();
@@ -305,6 +324,9 @@ class RawEditorState extends EditorState
   final LayerLink _endHandleLayerLink = LayerLink();
 
   TextDirection get _textDirection => Directionality.of(context);
+
+  @override
+  void insertContent(KeyboardInsertedContent content) {}
 
   /// Returns the [ContextMenuButtonItem]s representing the buttons in this
   /// platform's default selection menu for [RawEditor].
@@ -491,77 +513,148 @@ class RawEditorState extends EditorState
             minHeight: widget.minHeight ?? 0.0,
             maxHeight: widget.maxHeight ?? double.infinity);
 
+    final isMacOS = Theme.of(context).platform == TargetPlatform.macOS;
+
     return TextFieldTapRegion(
+      enabled: widget.enableUnfocusOnTapOutside,
       onTapOutside: _defaultOnTapOutside,
       child: QuillStyles(
         data: _styles!,
         child: Shortcuts(
-          shortcuts: <LogicalKeySet, Intent>{
+          shortcuts: mergeMaps<ShortcutActivator, Intent>({
             // shortcuts added for Desktop platforms.
-            LogicalKeySet(LogicalKeyboardKey.escape):
-                const HideSelectionToolbarIntent(),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyZ):
-                const UndoTextIntent(SelectionChangedCause.keyboard),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyY):
-                const RedoTextIntent(SelectionChangedCause.keyboard),
+            const SingleActivator(
+              LogicalKeyboardKey.escape,
+            ): const HideSelectionToolbarIntent(),
+            SingleActivator(
+              LogicalKeyboardKey.keyZ,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const UndoTextIntent(SelectionChangedCause.keyboard),
+            SingleActivator(
+              LogicalKeyboardKey.keyY,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const RedoTextIntent(SelectionChangedCause.keyboard),
 
             // Selection formatting.
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyB):
-                const ToggleTextStyleIntent(Attribute.bold),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyU):
-                const ToggleTextStyleIntent(Attribute.underline),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyI):
-                const ToggleTextStyleIntent(Attribute.italic),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
-                    LogicalKeyboardKey.keyS):
-                const ToggleTextStyleIntent(Attribute.strikeThrough),
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.backquote):
-                const ToggleTextStyleIntent(Attribute.inlineCode),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyL):
-                const ToggleTextStyleIntent(Attribute.ul),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyO):
-                const ToggleTextStyleIntent(Attribute.ol),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
-                    LogicalKeyboardKey.keyB):
-                const ToggleTextStyleIntent(Attribute.blockQuote),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
-                    LogicalKeyboardKey.tilde):
-                const ToggleTextStyleIntent(Attribute.codeBlock),
-            // Indent
-            LogicalKeySet(LogicalKeyboardKey.control,
-                    LogicalKeyboardKey.bracketRight):
-                const IndentSelectionIntent(true),
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.bracketLeft):
-                const IndentSelectionIntent(false),
+            SingleActivator(
+              LogicalKeyboardKey.keyB,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const ToggleTextStyleIntent(Attribute.bold),
+            SingleActivator(
+              LogicalKeyboardKey.keyU,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const ToggleTextStyleIntent(Attribute.underline),
+            SingleActivator(
+              LogicalKeyboardKey.keyI,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const ToggleTextStyleIntent(Attribute.italic),
+            SingleActivator(
+              LogicalKeyboardKey.keyS,
+              control: !isMacOS,
+              meta: isMacOS,
+              shift: true,
+            ): const ToggleTextStyleIntent(Attribute.strikeThrough),
+            SingleActivator(
+              LogicalKeyboardKey.backquote,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const ToggleTextStyleIntent(Attribute.inlineCode),
+            SingleActivator(
+              LogicalKeyboardKey.tilde,
+              control: !isMacOS,
+              meta: isMacOS,
+              shift: true,
+            ): const ToggleTextStyleIntent(Attribute.codeBlock),
+            SingleActivator(
+              LogicalKeyboardKey.keyB,
+              control: !isMacOS,
+              meta: isMacOS,
+              shift: true,
+            ): const ToggleTextStyleIntent(Attribute.blockQuote),
+            SingleActivator(
+              LogicalKeyboardKey.keyK,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const ApplyLinkIntent(),
 
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyF):
-                const OpenSearchIntent(),
+            // Lists
+            SingleActivator(
+              LogicalKeyboardKey.keyL,
+              control: !isMacOS,
+              meta: isMacOS,
+              shift: true,
+            ): const ToggleTextStyleIntent(Attribute.ul),
+            SingleActivator(
+              LogicalKeyboardKey.keyO,
+              control: !isMacOS,
+              meta: isMacOS,
+              shift: true,
+            ): const ToggleTextStyleIntent(Attribute.ol),
+            SingleActivator(
+              LogicalKeyboardKey.keyC,
+              control: !isMacOS,
+              meta: isMacOS,
+              shift: true,
+            ): const ApplyCheckListIntent(),
 
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.digit1):
-                const ApplyHeaderIntent(Attribute.h1),
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.digit2):
-                const ApplyHeaderIntent(Attribute.h2),
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.digit3):
-                const ApplyHeaderIntent(Attribute.h3),
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.digit0):
-                const ApplyHeaderIntent(Attribute.header),
+            // Indents
+            SingleActivator(
+              LogicalKeyboardKey.keyM,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const IndentSelectionIntent(true),
+            SingleActivator(
+              LogicalKeyboardKey.keyM,
+              control: !isMacOS,
+              meta: isMacOS,
+              shift: true,
+            ): const IndentSelectionIntent(false),
 
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
-                LogicalKeyboardKey.keyL): const ApplyCheckListIntent(),
+            // Headers
+            SingleActivator(
+              LogicalKeyboardKey.digit1,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const ApplyHeaderIntent(Attribute.h1),
+            SingleActivator(
+              LogicalKeyboardKey.digit2,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const ApplyHeaderIntent(Attribute.h2),
+            SingleActivator(
+              LogicalKeyboardKey.digit3,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const ApplyHeaderIntent(Attribute.h3),
+            SingleActivator(
+              LogicalKeyboardKey.digit0,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const ApplyHeaderIntent(Attribute.header),
 
-            if (widget.customShortcuts != null) ...widget.customShortcuts!,
-          },
+            SingleActivator(
+              LogicalKeyboardKey.keyG,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const InsertEmbedIntent(Attribute.image),
+
+            SingleActivator(
+              LogicalKeyboardKey.keyF,
+              control: !isMacOS,
+              meta: isMacOS,
+            ): const OpenSearchIntent(),
+          }, {
+            ...?widget.customShortcuts
+          }),
           child: Actions(
-            actions: {
-              ..._actions,
-              if (widget.customActions != null) ...widget.customActions!,
-            },
+            actions: mergeMaps<Type, Action<Intent>>(_actions, {
+              ...?widget.customActions,
+            }),
             child: Focus(
               focusNode: widget.focusNode,
               onKey: _onKey,
@@ -587,15 +680,14 @@ class RawEditorState extends EditorState
     if (event is! RawKeyDownEvent) {
       return KeyEventResult.ignored;
     }
+    // Handle indenting blocks when pressing the tab key.
+    if (event.logicalKey == LogicalKeyboardKey.tab) {
+      return _handleTabKey(event);
+    }
 
     // Don't handle key if there is an active selection.
     if (controller.selection.baseOffset != controller.selection.extentOffset) {
       return KeyEventResult.ignored;
-    }
-
-    // Handle indenting blocks when pressing the tab key.
-    if (event.logicalKey == LogicalKeyboardKey.tab) {
-      return _handleTabKey(event);
     }
 
     // Handle inserting lists when space is pressed following
@@ -648,6 +740,19 @@ class RawEditorState extends EditorState
       return KeyEventResult.handled;
     }
 
+    if (controller.selection.baseOffset != controller.selection.extentOffset) {
+      if (child.node == null || child.node!.parent == null) {
+        return KeyEventResult.handled;
+      }
+      final parentBlock = child.node!.parent!;
+      if (parentBlock.style.containsKey(Attribute.ol.key) ||
+          parentBlock.style.containsKey(Attribute.ul.key) ||
+          parentBlock.style.containsKey(Attribute.checked.key)) {
+        controller.indentSelection(!event.isShiftPressed);
+      }
+      return KeyEventResult.handled;
+    }
+
     if (child.node == null) {
       return insertTabCharacter();
     }
@@ -663,16 +768,21 @@ class RawEditorState extends EditorState
       return insertTabCharacter();
     }
 
-    if (node.isNotEmpty && (node.first as leaf.Text).value.isNotEmpty) {
-      return insertTabCharacter();
-    }
-
     final parentBlock = parent;
     if (parentBlock.style.containsKey(Attribute.ol.key) ||
         parentBlock.style.containsKey(Attribute.ul.key) ||
         parentBlock.style.containsKey(Attribute.checked.key)) {
+      if (node.isNotEmpty &&
+          (node.first as leaf.Text).value.isNotEmpty &&
+          controller.selection.base.offset > node.documentOffset) {
+        return insertTabCharacter();
+      }
       controller.indentSelection(!event.isShiftPressed);
       return KeyEventResult.handled;
+    }
+
+    if (node.isNotEmpty && (node.first as leaf.Text).value.isNotEmpty) {
+      return insertTabCharacter();
     }
 
     return insertTabCharacter();
@@ -756,17 +866,32 @@ class RawEditorState extends EditorState
   List<Widget> _buildChildren(Document doc, BuildContext context) {
     final result = <Widget>[];
     final indentLevelCounts = <int, int>{};
+    // this need for several ordered list in document
+    // we need to reset indents Map, if list finished
+    // List finished when there is node without Attribute.ol in styles
+    // So in this case we set clearIndents=true and send it
+    // to the next EditableTextBlock
+    var prevNodeOl = false;
+    var clearIndents = false;
+
     for (final node in doc.root.children) {
+      final attrs = node.style.attributes;
+
+      if (prevNodeOl && attrs[Attribute.list.key] != Attribute.ol) {
+        clearIndents = true;
+      }
+
+      prevNodeOl = attrs[Attribute.list.key] == Attribute.ol;
+
       if (node is Line) {
         final editableTextLine = _getEditableTextLineFromNode(node, context);
         result.add(Directionality(
             textDirection: getDirectionOfNode(node), child: editableTextLine));
       } else if (node is Block) {
-        final attrs = node.style.attributes;
         final editableTextBlock = EditableTextBlock(
             block: node,
             controller: controller,
-            textDirection: _textDirection,
+            textDirection: getDirectionOfNode(node),
             scrollBottomInset: widget.scrollBottomInset,
             verticalSpacing: _getVerticalSpacingForBlock(node, _styles),
             textSelection: controller.selection,
@@ -782,11 +907,15 @@ class RawEditorState extends EditorState
             onLaunchUrl: widget.onLaunchUrl,
             cursorCont: _cursorCont,
             indentLevelCounts: indentLevelCounts,
+            clearIndents: clearIndents,
             onCheckboxTap: _handleCheckboxTap,
             readOnly: widget.readOnly,
-            customStyleBuilder: widget.customStyleBuilder);
+            customStyleBuilder: widget.customStyleBuilder,
+            customLinkPrefixes: widget.customLinkPrefixes);
         result.add(Directionality(
             textDirection: getDirectionOfNode(node), child: editableTextBlock));
+
+        clearIndents = false;
       } else {
         throw StateError('Unreachable.');
       }
@@ -801,11 +930,13 @@ class RawEditorState extends EditorState
       textDirection: _textDirection,
       embedBuilder: widget.embedBuilder,
       customStyleBuilder: widget.customStyleBuilder,
+      customRecognizerBuilder: widget.customRecognizerBuilder,
       styles: _styles!,
       readOnly: widget.readOnly,
       controller: controller,
       linkActionPicker: _linkActionPicker,
       onLaunchUrl: widget.onLaunchUrl,
+      customLinkPrefixes: widget.customLinkPrefixes,
     );
     final editableTextLine = EditableTextLine(
         node,
@@ -1540,11 +1671,13 @@ class RawEditorState extends EditorState
     RedoTextIntent: _makeOverridable(_RedoKeyboardAction(this)),
 
     OpenSearchIntent: _openSearchAction,
+
     // Selection Formatting
     ToggleTextStyleIntent: _formatSelectionAction,
     IndentSelectionIntent: _indentSelectionAction,
     ApplyHeaderIntent: _applyHeaderAction,
     ApplyCheckListIntent: _applyCheckListAction,
+    ApplyLinkIntent: ApplyLinkAction(this)
   };
 
   @override
@@ -1579,7 +1712,7 @@ class RawEditorState extends EditorState
 }
 
 class _Editor extends MultiChildRenderObjectWidget {
-  _Editor({
+  const _Editor({
     required Key key,
     required List<Widget> children,
     required this.document,
@@ -2458,6 +2591,43 @@ class _ApplyCheckListAction extends Action<ApplyCheckListIntent> {
 
   @override
   bool get isActionEnabled => true;
+}
+
+class ApplyLinkIntent extends Intent {
+  const ApplyLinkIntent();
+}
+
+class ApplyLinkAction extends Action<ApplyLinkIntent> {
+  ApplyLinkAction(this.state);
+
+  final RawEditorState state;
+
+  @override
+  Object? invoke(ApplyLinkIntent intent) async {
+    final initialTextLink = QuillTextLink.prepare(state.controller);
+
+    final textLink = await showDialog<QuillTextLink>(
+      context: state.context,
+      builder: (context) {
+        return LinkStyleDialog(
+          text: initialTextLink.text,
+          link: initialTextLink.link,
+          dialogTheme: state.widget.dialogTheme,
+        );
+      },
+    );
+
+    if (textLink != null) {
+      textLink.submit(state.controller);
+    }
+    return null;
+  }
+}
+
+class InsertEmbedIntent extends Intent {
+  const InsertEmbedIntent(this.type);
+
+  final Attribute type;
 }
 
 /// Signature for a widget builder that builds a context menu for the given
