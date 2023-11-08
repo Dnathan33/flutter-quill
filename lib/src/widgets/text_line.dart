@@ -39,6 +39,7 @@ class TextLine extends StatefulWidget {
     required this.controller,
     required this.onLaunchUrl,
     required this.linkActionPicker,
+    this.index,
     this.textDirection,
     this.customStyleBuilder,
     this.customRecognizerBuilder,
@@ -47,6 +48,7 @@ class TextLine extends StatefulWidget {
   });
 
   final Line line;
+  final int? index;
   final TextDirection? textDirection;
   final EmbedsBuilder embedBuilder;
   final DefaultStyles styles;
@@ -311,13 +313,21 @@ class _TextLineState extends State<TextLine> {
     final nodeStyle = textNode.style;
     final isLink = nodeStyle.containsKey(Attribute.link.key) &&
         nodeStyle.attributes[Attribute.link.key]!.value != null;
+    final attrs = widget.line.style.attributes;
+    const whiteSpace = ' ';
+
+    var leading = '';
+    if (attrs[Attribute.list.key] == Attribute.ol) {
+      leading = '${widget.index}.$whiteSpace';
+    } else if (attrs[Attribute.list.key] == Attribute.ul) {
+      leading = '•$whiteSpace';
+    }
 
     final recognizer = _getRecognizer(node, isLink);
 
     return TextSpan(
-      text: textNode.value,
-      style: _getInlineTextStyle(
-          textNode, defaultStyles, nodeStyle, lineStyle, isLink),
+      text: '$leading${textNode.value}',
+      style: _getInlineTextStyle(textNode, defaultStyles, nodeStyle, lineStyle, isLink),
       recognizer: recognizer,
       mouseCursor: (recognizer != null) ? SystemMouseCursors.click : null,
     );

@@ -155,6 +155,7 @@ class EditableTextBlock extends StatelessWidget {
         ),
         TextLine(
           line: line,
+          index: index,
           textDirection: textDirection,
           embedBuilder: embedBuilder,
           customStyleBuilder: customStyleBuilder,
