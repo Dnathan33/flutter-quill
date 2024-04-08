@@ -1,4 +1,4 @@
-import '../quill_delta.dart';
+import '../../../quill_delta.dart';
 import '../structs/doc_change.dart';
 import '../structs/history_changed.dart';
 import 'document.dart';
@@ -12,7 +12,7 @@ class History {
     this.lastRecorded = 0,
   });
 
-  final HistoryStack stack = HistoryStack.empty();
+  HistoryStack stack = HistoryStack.empty();
 
   bool get hasUndo => stack.undo.isNotEmpty;
 
@@ -124,8 +124,8 @@ class HistoryStack {
       : undo = [],
         redo = [];
 
-  final List<Delta> undo;
-  final List<Delta> redo;
+  List<Delta> undo;
+  List<Delta> redo;
 
   void clear() {
     undo.clear();

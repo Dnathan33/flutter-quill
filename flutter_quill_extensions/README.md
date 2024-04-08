@@ -1,9 +1,7 @@
 # Flutter Quill Extensions
 
-A extensions for [flutter_quill](https://pub.dev/packages/flutter_quill)
-to support embed widgets like image, formula, video and more.
-
-Currently the support for **Web** is limitied.
+An extensions for [flutter_quill](https://pub.dev/packages/flutter_quill)
+to support embedding widgets like images, formulas, videos, and more.
 
  Check [Flutter Quill](https://github.com/singerdmx/flutter-quill) for details of use.
 
@@ -13,52 +11,65 @@ Currently the support for **Web** is limitied.
   - [Table of Contents](#table-of-contents)
   - [About](#about)
   - [Installation](#installation)
-  - [Platform Spesefic Configurations](#platform-spesefic-configurations)
+  - [Platform Specific Configurations](#platform-specific-configurations)
   - [Usage](#usage)
   - [Embed Blocks](#embed-blocks)
-    - [Custom Size Image for Mobile](#custom-size-image-for-mobile)
-    - [Custom Size Image for other platforms (excluding web)](#custom-size-image-for-other-platforms-excluding-web)
+    - [Element properties](#element-properties)
+    - [Custom Element properties](#custom-element-properties)
+    - [Image Assets](#image-assets)
     - [Drag and drop feature](#drag-and-drop-feature)
   - [Features](#features)
   - [Contributing](#contributing)
-  - [License](#license)
   - [Acknowledgments](#acknowledgments)
 
 
 ## About
-Flutter quill is a rich editor text and it's allow you to customize a lot of things, it has custom embed builders which allow you to render custom widgets in the editor <br>
-this is a extensions to extends it functionallities by adding more features like images, videos, and more
+
+Flutter Quill is a rich editor text. It'd allow you to customize a lot of things, 
+it has custom embed builders that allow you to render custom widgets in the editor <br>
+this is an extension to extend its functionalities by adding more features like images, videos, and more
 
 ## Installation
 
-Before start using this package, please make sure to install
-[flutter_quill](https://github.com/singerdmx/flutter-quill) package first and follow it's usage instructions.
+Before starting using this package, please make sure to install
+[flutter_quill](https://github.com/singerdmx/flutter-quill) package first and follow 
+its usage instructions.
 
 ```yaml
 dependencies:
   flutter_quill_extensions: ^<latest-version-here>
 ```
 
-## Platform Spesefic Configurations
+<p align="center">OR</p>
+
+```yaml
+dependencies:
+  flutter_quill_extensions:
+    git: https://github.com/singerdmx/flutter-quill.git
+    path: flutter_quill_extensions
+```
+
+## Platform Specific Configurations
 
 >
-> 1. We are using [`gal`](https://github.com/natsuk4ze/) plugin to save images.
-> For this to work, you need to add the appropriate permissions
-> to your `Info.plist` and `AndroidManifest.xml` files.
+> 1. We are using the [`gal`](https://github.com/natsuk4ze/) plugin to save images.
+> For this to work, you need to add the appropriate configurations
 > See <https://github.com/natsuk4ze/gal#-get-started> to add the needed lines.
 >
-> 2. We also use [`image_picker`](https://pub.dev/packages/image_picker) plugin for picking images so please make sure follow the instructions
+> 2. We also use [`image_picker`](https://pub.dev/packages/image_picker) plugin for picking images so please make sure to follow the instructions
 >
-> 3. For loading the image from the internet we need internet permission
->    1. For Android, you need to add some permissions in `AndroidManifest.xml`, Please follow this [link](https://developer.android.com/training/basics/network-ops/connecting) for more info, the internet permission included by default only for debugging so you need to follow this link to add it in the release version too. you should allow loading images and videos only for the `https` protocol but if you want http too then you need to configure your android application to accept `http` in the release mode, follow this [link](https://stackoverflow.com/questions/45940861/android-8-cleartext-http-traffic-not-permitted) for more info.
->    2. for macOS you also need to include a key in your `Info.plist`, please follow this [link](https://stackoverflow.com/a/61201081/18519412) to add the required configurations
+> 3. We are using [youtube_player_flutter](https://pub.dev/packages/youtube_player_flutter) plugin which uses [flutter_inappwebview](https://pub.dev/packages/flutter_inappwebview) which has requirement on web, please follow this [link](https://pub.dev/packages/flutter_inappwebview#installation) in order to setup the support for web
+> 4. For loading the image from the internet, we need the internet permission
+>    1. For Android, you need to add some permissions in `AndroidManifest.xml`, Please follow this [link](https://developer.android.com/training/basics/network-ops/connecting) for more info, the internet permission is included by default only for debugging so you need to follow this link to add it in the release version too. you should allow loading images and videos only for the `https` protocol but if you want http too then you need to configure your Android application to accept `http` in the release mode, follow this [link](https://stackoverflow.com/questions/45940861/android-8-cleartext-http-traffic-not-permitted) for more info.
+>    2. For macOS, you also need to include a key in your `Info.plist`, please follow this [link](https://stackoverflow.com/a/61201081/18519412) to add the required configurations
 >
-> The extensions package also use [image_picker](https://pub.dev/packages/image_picker) which also require some configurations, follow this [link](https://pub.dev/packages/image_picker#installation). It's needed for Android, iOS, macOS, we must inform you that you can't pick photo using camera in desktop so make sure to handle that if you plan on add support for desktop, this may change in the future and for more info follow this [link](https://pub.dev/packages/image_picker#windows-macos-and-linux) <br>
+> The extension package also uses [image_picker](https://pub.dev/packages/image_picker) which also 
+> requires some configurations, follow this [link](https://pub.dev/packages/image_picker#installation). It's needed for Android, iOS, and macOS, we must inform you that you can't pick photos using the camera on a desktop so make sure to handle that if you plan on adding support for the desktop, this may change in the future, and for more info follow this [link](https://pub.dev/packages/image_picker#windows-macos-and-linux) <br>
 > 
 
 ## Usage
 
-Before starting using this package you must follow the [setup](#installation)
+Before starting to use this package you must follow the [setup](#installation)
 
 Set the `embedBuilders` and `embedToolbar` params in configurations of `QuillEditor` and `QuillToolbar` with the
 values provided by this repository.
@@ -77,67 +88,22 @@ QuillToolbar(
 Expanded(
   child: QuillEditor.basic(
     configurations: QuillEditorConfigurations(
-      embedBuilders: kIsWeb ? FlutterQuillEmbeds.editorsWebBuilders() : FlutterQuillEmbeds.editorBuilders(),
+      embedBuilders: kIsWeb ? FlutterQuillEmbeds.editorWebBuilders() : FlutterQuillEmbeds.editorBuilders(),
     ),
-  ),
-)
-```
-
-They both should be have a parent `QuillProvider` in the widget tree and setup properly <br>
-Example:
-
-```dart
-QuillProvider(
-  configurations: QuillConfigurations(
-    controller: _controller,
-    sharedConfigurations: const QuillSharedConfigurations(),
-  ),
-  child: Column(
-    children: [
-      QuillToolbar(
-        configurations: QuillToolbarConfigurations(
-          embedButtons: FlutterQuillEmbeds.toolbarButtons(
-            imageButtonOptions: QuillToolbarImageButtonOptions(),
-          ),
-        ),
-      ),
-      Expanded(
-        child: QuillEditor.basic(
-          configurations: QuillEditorConfigurations(
-            padding: const EdgeInsets.all(16),
-            embedBuilders: kIsWeb ? FlutterQuillEmbeds.editorsWebBuilders() : FlutterQuillEmbeds.editorBuilders(),
-          ),
-        ),
-      )
-    ],
   ),
 )
 ```
 
 ## Embed Blocks
 
-As of version [flutter_quill](https://pub.dev/packages/flutter_quill) 6.0, embed blocks are not provided by default as part of Flutter quill. Instead, it provides an interface to all the user to provide there own implementations for embed blocks. Implementations for image, video and formula embed blocks is proved in this package
+As of version [flutter_quill](https://pub.dev/packages/flutter_quill) 6.0, embed blocks are not provided by default as part of Flutter quill. Instead, it provides an interface for all the users to provide their implementations for embed blocks. Implementations for image, video, and formula embed blocks are proved in this package
 
-The instructions for using the embed blocks is in the [Usage](#usage) section
+The instructions for using the embed blocks are in the [Usage](#usage) section
 
-### Custom Size Image for Mobile
+### Element properties
 
-Define `mobileWidth`, `mobileHeight`, `mobileMargin`, `mobileAlignment` as follows:
-
-```json
-{
-      "insert": {
-         "image": "https://user-images.githubusercontent.com/122956/72955931-ccc07900-3d52-11ea-89b1-d468a6e2aa2b.png"
-      },
-      "attributes":{
-         "style":"mobileWidth: 50; mobileHeight: 50; mobileMargin: 10; mobileAlignment: topLeft"
-      }
-}
-```
-
-### Custom Size Image for other platforms (excluding web)
-
-Define `width`, `height`, `margin`, `alignment` as follows:
+Currently the library has limitied support for the image and video properties
+and it supports only `width`, `height`, `margin`
 
 ```json
 {
@@ -145,48 +111,86 @@ Define `width`, `height`, `margin`, `alignment` as follows:
          "image": "https://user-images.githubusercontent.com/122956/72955931-ccc07900-3d52-11ea-89b1-d468a6e2aa2b.png"
       },
       "attributes": {
-         "style":"width: 50; height: 50; margin: 10; alignment: topLeft"
+         "style":"width: 50px; height: 50px; margin: 10px;"
       }
 }
 ```
 
-On mobile we will use `mobileWidth`, `mobileHeight`, on desktop will use `width`, `heigth`
-on Web we will use the `width` and the `height` but the ones in the `attributes`
-This may not clear but don't worry we will update it soon.
+### Custom Element properties
+
+Doesn't apply to official Quill JS
+
+Define flutterAlignment` as follows:
+
+```json
+{
+      "insert": {
+         "image": "https://user-images.githubusercontent.com/122956/72955931-ccc07900-3d52-11ea-89b1-d468a6e2aa2b.png"
+      },
+      "attributes":{
+         "style":"flutterAlignment: topLeft"
+      }
+}
+```
+
+This works for all platforms except Web
+
+### Image Assets
+
+If you want to use image assets in the Quill Editor, you need to make sure your assets folder is `assets` otherwise:
+
+```dart
+QuillEditor.basic(
+  configurations: const QuillEditorConfigurations(
+    // ...
+    sharedConfigurations: QuillSharedConfigurations(
+      extraConfigurations: {
+        QuillSharedExtensionsConfigurations.key:
+            QuillSharedExtensionsConfigurations(
+          assetsPrefix: 'your-assets-folder-name', // Defaults to `assets`
+        ),
+      },
+    ),
+  ),
+);
+```
+
+This info is needed by the package to check if it asset image to use the `AssetImage` provider
 
 ### Drag and drop feature
-Currently the drag and drop feature is not offically supported but you can achieve this very easily in the following steps:
+Currently, the drag-and-drop feature is not officially supported, but you can achieve this very easily in the following steps:
 
-1. Drag and drop require native code, you can use any flutter plugin you like, if you want a suggestion we recommend [desktop_drop](https://pub.dev/packages/desktop_drop), it was origanlly developed for desktop but it has support for web as well mobile platforms
+1. Drag and drop require native code, you can use any Flutter plugin you like, if you want a suggestion we recommend [desktop_drop](https://pub.dev/packages/desktop_drop), it was originally developed for desktop but it has support for the web as well as Android (that is not the case for iOS)
 2. Add the dependency in your `pubspec.yaml` using the following command:
-```yaml
-flutter pub add desktop_drop
-```
-and import it with
-```dart
-import 'package:desktop_drop/desktop_drop.dart';
-```
+
+    ```yaml
+    flutter pub add desktop_drop
+    ```
+    and import it with
+    ```dart
+    import 'package:desktop_drop/desktop_drop.dart';
+    ```
 3. in the configurations of `QuillEditor`, use the `builder` to wrap the editor with `DropTarget` which comes from `desktop_drop`
 
-```dart
-import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
-
-QuillEditor.basic(
-      configurations: QuillEditorConfigurations(
-        padding: const EdgeInsets.all(16),
-         builder: (context, rawEditor) {
-            return DropTarget(
-              onDragDone: _onDragDone,
-              child: rawEditor,
-            );
-          },
-        embedBuilders: kIsWeb
-            ? FlutterQuillEmbeds.editorsWebBuilders()
-            : FlutterQuillEmbeds.editorBuilders(),
-      ),
-)
-```
-4. Implement the `_onDragDone`, it depend on your use case but this just a simple example
+    ```dart
+    import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+    
+    QuillEditor.basic(
+          configurations: QuillEditorConfigurations(
+            padding: const EdgeInsets.all(16),
+             builder: (context, rawEditor) {
+                return DropTarget(
+                  onDragDone: _onDragDone,
+                  child: rawEditor,
+                );
+              },
+            embedBuilders: kIsWeb
+                ? FlutterQuillEmbeds.editorWebBuilders()
+                : FlutterQuillEmbeds.editorBuilders(),
+          ),
+    )
+    ```
+4. Implement the `_onDragDone`, it depends on your use case but this is just a simple example
 ```dart
 const List<String> imageFileExtensions = [
   '.jpeg',
@@ -231,21 +235,19 @@ OnDragDoneCallback get _onDragDone {
 ```markdown
 ## Features
 
-- Easy to use and customizable
-- Has the option to use custom image provider for the images
-- Usefull utilities and widgets
+— Easy to use and customizable
+- Has the option to use a custom image provider for the images
+- Useful utilities and widgets
 - Handle different errors
 ```
+
+Please notice that the saving image functionality is not supported on Linux yet.
 
 ## Contributing
 
 We welcome contributions!
 
-Please follow these guidelines when contributing to our project. See [CONTRIBUTING.md](./../doc/CONTRIBUTING.md) for more details.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for details.
+Please follow these guidelines when contributing to our project. See [CONTRIBUTING.md](../CONTRIBUTING.md) for more details.
 
 ## Acknowledgments
 

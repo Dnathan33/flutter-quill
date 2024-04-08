@@ -1,11 +1,15 @@
+import 'package:meta/meta.dart' show immutable;
+
+import '../../../quill_delta.dart';
+import '../../extensions/uri_ext.dart';
 import '../../models/documents/document.dart';
 import '../documents/attribute.dart';
 import '../documents/nodes/embeddable.dart';
 import '../documents/style.dart';
-import '../quill_delta.dart';
 import 'rule.dart';
 
 /// A heuristic rule for insert operations.
+@immutable
 abstract class InsertRule extends Rule {
   const InsertRule();
 
@@ -23,6 +27,7 @@ abstract class InsertRule extends Rule {
 ///
 /// This rule ignores scenarios when the line is split on its edge, meaning
 /// a newline is inserted at the beginning or the end of a line.
+@immutable
 class PreserveLineStyleOnSplitRule extends InsertRule {
   const PreserveLineStyleOnSplitRule();
 
@@ -73,6 +78,7 @@ class PreserveLineStyleOnSplitRule extends InsertRule {
 ///   * pasting text containing multiple lines of text in a block
 ///
 /// This rule may also be activated for changes triggered by auto-correct.
+@immutable
 class PreserveBlockStyleOnInsertRule extends InsertRule {
   const PreserveBlockStyleOnInsertRule();
 
@@ -149,6 +155,7 @@ class PreserveBlockStyleOnInsertRule extends InsertRule {
 /// This rule is only applied when the cursor is on the last line of a block.
 /// When the cursor is in the middle of a block we allow adding empty lines
 /// and preserving the block's style.
+@immutable
 class AutoExitBlockRule extends InsertRule {
   const AutoExitBlockRule();
 
@@ -228,6 +235,7 @@ class AutoExitBlockRule extends InsertRule {
 ///
 /// This handles scenarios when a new line is added when at the end of a
 /// heading line. The newly added line should be a regular paragraph.
+@immutable
 class ResetLineFormatOnNewLineRule extends InsertRule {
   const ResetLineFormatOnNewLineRule();
 
@@ -264,6 +272,7 @@ class ResetLineFormatOnNewLineRule extends InsertRule {
 
 /// Handles all format operations which manipulate embeds.
 /// This rule wraps line breaks around video, not image.
+@immutable
 class InsertEmbedsRule extends InsertRule {
   const InsertEmbedsRule();
 
@@ -327,6 +336,7 @@ class InsertEmbedsRule extends InsertRule {
 /// the URL pattern.
 ///
 /// The link attribute is applied as the user types.
+@immutable
 class AutoFormatMultipleLinksRule extends InsertRule {
   const AutoFormatMultipleLinksRule();
 
@@ -355,9 +365,6 @@ class AutoFormatMultipleLinksRule extends InsertRule {
   // https://example.net/
   // URL generator tool (https://www.randomlists.com/urls) is used.
 
-  // TODO: You might want to rename those but everywhere even in
-  // flutter_quill_extensions
-
   static const _oneLineLinkPattern =
       r'^https?:\/\/[\w\-]+(\.[\w\-]+)*(:\d+)?(\/.*)?$';
   static const _detectLinkPattern =
@@ -375,9 +382,6 @@ class AutoFormatMultipleLinksRule extends InsertRule {
     _detectLinkPattern,
     caseSensitive: false,
   );
-  // @Deprecated(
-  //   'Please use [linkRegExp1] or [linkRegExp2]',
-  // )
   static final linkRegExp = oneLineLinkRegExp;
 
   @override
@@ -492,6 +496,7 @@ class AutoFormatMultipleLinksRule extends InsertRule {
 
 /// Applies link format to text segment (which looks like a link) when user
 /// inserts space character after it.
+@immutable
 class AutoFormatLinksRule extends InsertRule {
   const AutoFormatLinksRule();
 
@@ -516,7 +521,7 @@ class AutoFormatLinksRule extends InsertRule {
     try {
       final cand = (prev.data as String).split('\n').last.split(' ').last;
       final link = Uri.parse(cand);
-      if (!['https', 'http'].contains(link.scheme)) {
+      if (!link.isHttpBasedUrl()) {
         return null;
       }
       final attributes = prev.attributes ?? <String, dynamic>{};
@@ -537,6 +542,7 @@ class AutoFormatLinksRule extends InsertRule {
 }
 
 /// Preserves inline styles when user inserts text inside formatted segment.
+@immutable
 class PreserveInlineStylesRule extends InsertRule {
   const PreserveInlineStylesRule();
 
@@ -588,6 +594,7 @@ class PreserveInlineStylesRule extends InsertRule {
 }
 
 /// Fallback rule which simply inserts text as-is without any special handling.
+@immutable
 class CatchAllInsertRule extends InsertRule {
   const CatchAllInsertRule();
 
@@ -618,6 +625,7 @@ _NextNewLine _getNextNewLine(DeltaIterator iterator) {
   return const _NextNewLine(null, null);
 }
 
+@immutable
 class _NextNewLine {
   const _NextNewLine(this.operation, this.skipped);
 

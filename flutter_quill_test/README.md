@@ -1,6 +1,14 @@
 # Flutter Quill Test
 
-Test utilities for [flutter_quill](https://pub.dev/packages/flutter_quill) which includes methods to simplify interacting with the editor in test cases.
+Test utilities for [flutter_quill](https://pub.dev/packages/flutter_quill)
+which include methods to simplify interacting with the editor in test cases.
+
+## Table of Contents
+- [Flutter Quill Test](#flutter-quill-test)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Testing](#testing)
+  - [Contributing](#contributing)
 
 ## Installation
 
@@ -9,7 +17,7 @@ Run the command in your project root folder:
 dart pub add dev:flutter_quill_test
 ```
 
-Example of how it will looks like:
+Example of how it will look like:
 
 ```yaml
 dev_dependencies:
@@ -25,7 +33,7 @@ To aid in testing applications using the editor an extension to the flutter `Wid
 Import the test utilities in your test file:
 
 ```dart
-import 'package:flutter_quill/flutter_quill_test.dart';
+import 'package:flutter_quill_test/flutter_quill_test.dart';
 ```
 
 and then enter text using `quillEnterText`:
@@ -38,8 +46,4 @@ await tester.quillEnterText(find.byType(QuillEditor), 'test\n');
 
 We welcome contributions!
 
-Please follow these guidelines when contributing to our project. See [CONTRIBUTING.md](./../doc/CONTRIBUTING.md) for more details.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for details.
+Please follow these guidelines when contributing to our project. See [CONTRIBUTING.md](../CONTRIBUTING.md) for more details.

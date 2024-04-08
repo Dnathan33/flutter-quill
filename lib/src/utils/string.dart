@@ -1,6 +1,4 @@
-import 'package:flutter/cupertino.dart';
-
-import '../models/documents/attribute.dart';
+import 'package:flutter/widgets.dart' show Alignment, TextAlign;
 
 Map<String, String> parseKeyValuePairs(String s, Set<String> targetKeys) {
   final result = <String, String>{};
@@ -19,44 +17,10 @@ Map<String, String> parseKeyValuePairs(String s, Set<String> targetKeys) {
   return result;
 }
 
-String replaceStyleStringWithSize(
-  String s, {
-  required double width,
-  required double height,
-  required bool isMobile,
-}) {
-  final result = <String, String>{};
-  final pairs = s.split(';');
-  for (final pair in pairs) {
-    final index = pair.indexOf(':');
-    if (index < 0) {
-      continue;
-    }
-    final key = pair.substring(0, index).trim();
-    result[key] = pair.substring(index + 1).trim();
-  }
-
-  if (isMobile) {
-    result[Attribute.mobileWidth] = width.toString();
-    result[Attribute.mobileHeight] = height.toString();
-  } else {
-    result[Attribute.width.key] = width.toString();
-    result[Attribute.height.key] = height.toString();
-  }
-  final sb = StringBuffer();
-  for (final pair in result.entries) {
-    sb
-      ..write(pair.key)
-      ..write(': ')
-      ..write(pair.value)
-      ..write('; ');
-  }
-  return sb.toString();
-}
-
-Alignment getAlignment(String? s) {
+/// Get flutter [Alignment] value by [cssAlignment]
+Alignment getAlignment(String? cssAlignment) {
   const defaultAlignment = Alignment.center;
-  if (s == null) {
+  if (cssAlignment == null) {
     return defaultAlignment;
   }
 
@@ -70,7 +34,7 @@ Alignment getAlignment(String? s) {
     'bottomLeft',
     'bottomCenter',
     'bottomRight'
-  ].indexOf(s);
+  ].indexOf(cssAlignment);
   if (index < 0) {
     return defaultAlignment;
   }
@@ -86,4 +50,14 @@ Alignment getAlignment(String? s) {
     Alignment.bottomCenter,
     Alignment.bottomRight
   ][index];
+}
+
+TextAlign? getTextAlign(String value) {
+  return switch (value) {
+    'center' => TextAlign.center,
+    'right' => TextAlign.right,
+    'left' => TextAlign.left,
+    'justify' => null,
+    Object() => null,
+  };
 }

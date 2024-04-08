@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
 
-import '../../../widgets/embeds.dart';
-import '../../quill_delta.dart';
+import '../../../../quill_delta.dart';
+import '../../../widgets/quill/embeds.dart';
 import '../../structs/offset_value.dart';
 import '../attribute.dart';
 import '../style.dart';
@@ -19,7 +19,7 @@ import 'node.dart';
 ///
 /// When a line contains an embed, it fully occupies the line, no other embeds
 /// or text nodes are allowed.
-base class Line extends Container<Leaf?> {
+base class Line extends QuillContainer<Leaf?> {
   @override
   Leaf get defaultChild => QuillText();
 
@@ -317,6 +317,14 @@ base class Line extends Container<Leaf?> {
   void _insertSafe(int index, Object data, Style? style) {
     assert(index == 0 || (index > 0 && index < length));
 
+    // var inlineStyles = style;
+    // if (style != null) {
+    //   final nonInlineStyles =
+    //       style.attributes.values.where((v) => !v.isInline).toSet();
+    //   final styleToApply = style.removeAll(nonInlineStyles);
+    //   inlineStyles = styleToApply;
+    // }
+
     if (data is String) {
       assert(!data.contains('\n'));
       if (data.isEmpty) {
@@ -354,7 +362,7 @@ base class Line extends Container<Leaf?> {
     void handle(Style style) {
       for (final attr in result.values) {
         if (!style.containsKey(attr.key) ||
-            (style.attributes[attr.key] != attr.value)) {
+            (style.attributes[attr.key]?.value != attr.value)) {
           excluded.add(attr);
         }
       }
@@ -382,6 +390,7 @@ base class Line extends Container<Leaf?> {
     final remaining = len - local;
     if (remaining > 0 && nextLine != null) {
       final rest = nextLine!.collectStyle(0, remaining);
+      result = result.mergeAll(rest);
       handle(rest);
     }
 

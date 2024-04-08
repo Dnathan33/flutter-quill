@@ -1,19 +1,27 @@
 #!/bin/bash
 
-echo ""
-
-echo "Enable local development for flutter_quill:"
-cp pubspec_overrides.yaml.g pubspec_overrides.yaml
+# Please make sure to run this script in the root directory of the repository and not inside sub-folders
 
 echo ""
 
-echo "Enable local development for flutter_quill_extensions:"
-cp flutter_quill_extensions/pubspec_overrides.yaml.g flutter_quill_extensions/pubspec_overrides.yaml
+echo "Enable local development for flutter_quill..."
+cp pubspec_overrides.yaml.disabled pubspec_overrides.yaml
 
 echo ""
 
-echo "Enable local development for flutter_quill_test:"
-cp flutter_quill_test/pubspec_overrides.yaml.g flutter_quill_test/pubspec_overrides.yaml
+echo "Enable local development for flutter_quill_extensions..."
+cp flutter_quill_extensions/pubspec_overrides.yaml.disabled flutter_quill_extensions/pubspec_overrides.yaml
+
+echo ""
+
+echo "Enable local development for flutter_quill_test..."
+cp flutter_quill_test/pubspec_overrides.yaml.disabled flutter_quill_test/pubspec_overrides.yaml
+
+echo ""
+
+echo "Enable local development for all the other packages..."
+cp quill_html_converter/pubspec_overrides.yaml.disabled quill_html_converter/pubspec_overrides.yaml
+cp quill_pdf_converter/pubspec_overrides.yaml.disabled quill_pdf_converter/pubspec_overrides.yaml
 
 echo ""
 

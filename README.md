@@ -12,7 +12,7 @@
 [![Watch on GitHub][github-forks-badge]][github-forks-link]
 
 [license-badge]: https://img.shields.io/github/license/singerdmx/flutter-quill.svg?style=for-the-badge
-[license-link]: https://github.com/singerdmx/flutter-quill/blob/master/LICENSE
+[license-link]: ./LICENSE
 [prs-badge]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge
 [prs-link]: https://github.com/singerdmx/flutter-quill/issues
 [github-watch-badge]: https://img.shields.io/github/watchers/singerdmx/flutter-quill.svg?style=for-the-badge&logo=github&logoColor=ffffff
@@ -26,30 +26,52 @@
 
 FlutterQuill is a rich text editor and a [Quill] component for [Flutter].
 
-This library is a WYSIWYG editor built for the modern Android, iOS, web and desktop platforms. Check out our [Youtube Playlist] or [Code Introduction] to take a detailed walkthrough of the code base. You can join our [Slack Group] for discussion.
+This library is a WYSIWYG (What You See Is What You Get) editor built
+for the modern Android, iOS, 
+web and desktop platforms.
+Check out our [Youtube Playlist] or [Code Introduction](./doc/code_introduction.md)
+to take a detailed walkthrough of the code base.
+You can join our [Slack Group] for discussion.
 
-Pub: [FlutterQuill]
+Pub page: [FlutterQuill] <br>
+If you are viewing this page from pub.dev page, then you
+might have some issues with opening some links, please open
+it's in the GitHub repo instead.
 
 ## Table of contents
 - [Flutter Quill](#flutter-quill)
   - [Table of contents](#table-of-contents)
+  - [Screenshots](#screenshots)
   - [Installation](#installation)
+  - [Platform Specific Configurations](#platform-specific-configurations)
   - [Usage](#usage)
   - [Migration](#migration)
   - [Input / Output](#input--output)
+    - [Links](#links)
   - [Configurations](#configurations)
-    - [Using Custom App Widget](#using-custom-app-widget)
-    - [Font Size](#font-size)
+    - [Links](#links-1)
     - [Font Family](#font-family)
-    - [Custom Buttons](#custom-buttons)
   - [Embed Blocks](#embed-blocks)
     - [Using the embed blocks from `flutter_quill_extensions`](#using-the-embed-blocks-from-flutter_quill_extensions)
-    - [Custom Embed Blocks](#custom-embed-blocks)
-    - [Custom Toolbar](#custom-toolbar)
-    - [Translation](#translation)
+    - [Links](#links-2)
   - [Conversion to HTML](#conversion-to-html)
+  - [Translation](#translation)
   - [Testing](#testing)
   - [Contributors](#contributors)
+
+## Screenshots
+
+<details>
+<summary>Tap to show/hide screenshots</summary>
+
+<br>
+
+<img src="./example/assets/images/screenshot_1.png" width="250" alt="Screenshot 1">
+<img src="./example/assets/images/screenshot_2.png" width="200" alt="Screenshot 2">
+<img src="./example/assets/images/screenshot_3.png" width="175" alt="Screenshot 3">
+<img src="./example/assets/images/screenshot_4.png" width="135" alt="Screenshot 4">
+
+</details>
 
 ## Installation
 
@@ -67,217 +89,178 @@ dependencies:
 ```
 
 >
-> Using the latest version and reporting any issues you encounter on GitHub will greatly contribute to the improvement of the library. Your input and insights are valuable in shaping a stable and reliable version for all our users. Thank you for being part of the open-source community!
+> Note: At this time, we are making too many changes to the library, and you might see a new version almost every day
 >
-> Please use the latest pre-release of [FlutterQuill Extensions] in order to work with the latest stable version of [FlutterQuill]
+> Using the latest version and reporting any issues you encounter on GitHub will greatly contribute to the improvement of the library. 
+> Your input and insights are valuable in shaping a stable and reliable version for all our users. Thank you for being part of the open-source community!
 >
+
+<!-- Compatible versions:
+
+| flutter_quill | Flutter | Dart  |
+|---------------|---------|-------|
+| 9.0.x         | 3.16.x  | 3.2.x |
+
+These versions are tested and well-supported, you shouldn't get a build failure -->
+
+## Platform Specific Configurations
+
+Before using the package, we must inform you the package use the following plugins:
+  ```
+  url_launcher
+  flutter_keyboard_visibility
+  device_info_plus
+  super_clipboard
+  ```
+
+All of them doesn't require any platform specific setup, except [super_clipboard](https://pub.dev/packages/super_clipboard) which needs some setup on Android only, it's used to support copying images and pasting them into editor then you must setup it, open the page in pub.dev and read the `README.md` to get the instructions.
+
+The minSdkVersion is `23` as `super_clipboard` requires it
 
 ## Usage
 
-See the `example` directory for a minimal example of how to use FlutterQuill.  You typically just need to instantiate a controller:
+First, you need to instantiate a controller
 
 ```dart
 QuillController _controller = QuillController.basic();
 ```
 
-and then embed the toolbar and the editor, within your app.  For example:
+And then use the `QuillEditor`, `QuillToolbar` widgets,
+connect the `QuillController` to them
 
 ```dart
-QuillProvider(
-  configurations: QuillConfigurations(
+QuillToolbar.simple(
+  configurations: QuillSimpleToolbarConfigurations(
     controller: _controller,
     sharedConfigurations: const QuillSharedConfigurations(
       locale: Locale('de'),
     ),
   ),
-  child: Column(
-    children: [
-      const QuillToolbar(),
-      Expanded(
-        child: QuillEditor.basic(
-          configurations: const QuillEditorConfigurations(
-            readOnly: false,
-          ),
-        ),
-      )
-    ],
+),
+Expanded(
+  child: QuillEditor.basic(
+    configurations: QuillEditorConfigurations(
+      controller: _controller,
+      readOnly: false,
+      sharedConfigurations: const QuillSharedConfigurations(
+        locale: Locale('de'),
+      ),
+    ),
   ),
 )
 ```
 
-And depending on your use case, you might want to dispose the `_controller` in dispose mehtod
+Depending on your use case, you might want to dispose of the `_controller` in `dispose` method
+
+in most cases, it's better to.
 
 Check out [Sample Page] for more advanced usage.
 
 ## Migration
-We have recently add [migration guide](/doc/migration.md) for migration from different versions
+Starting from version `8.0.0`
+We have added [Migration Guide](/doc/migration.md) for migration from different versions
 
 ## Input / Output
 
-This library uses [Quill] as an internal data format.
+This library uses [Quill Delta](https://quilljs.com/docs/delta/)
+to represent the document content.
+The Delta format is a compact and versatile way to describe document changes.
+It consists of a series of operations, each representing an insertion, deletion,
+or formatting change within the document.
+
+Don’t be confused by its name Delta—Deltas represents both documents and changes to documents.
+If you think of Deltas as the instructions for going from one document to another,
+the way Deltas represents a document is by expressing the instructions starting from an empty document.
 
 * Use `_controller.document.toDelta()` to extract the deltas.
 * Use `_controller.document.toPlainText()` to extract plain text.
 
-FlutterQuill provides some JSON serialization support, so that you can save and open documents.  To save a document as JSON, do something like the following:
+FlutterQuill provides some JSON serialization support so that you can save and open documents.
+To save a document as JSON, do something like the following:
 
 ```dart
-var json = jsonEncode(_controller.document.toDelta().toJson());
+final json = jsonEncode(_controller.document.toDelta().toJson());
 ```
 
 You can then write this to storage.
 
-To open a FlutterQuill editor with an existing JSON representation that you've previously stored, you can do something like this:
+To open a FlutterQuill editor with an existing JSON representation that you've previously stored, 
+you can do something like this:
 
 ```dart
-var myJSON = jsonDecode(r'{"insert":"hello\n"}');
-_controller = QuillController(
-          document: Document.fromJson(myJSON),
-          selection: TextSelection.collapsed(offset: 0),
-        );
+final json = jsonDecode(r'{"insert":"hello\n"}');
+
+_controller.document = Document.fromJson(json);
 ```
+
+### Links
+
+- [Quill Delta](https://quilljs.com/docs/delta/)
+- [Quill Delta Formats](https://quilljs.com/docs/formats)
+- [Why Quill](https://quilljs.com/guides/why-quill/)
+- [Quill JS Configurations](https://quilljs.com/docs/configuration/)
+- [Quill JS Interactive Playground](https://quilljs.com/playground/)
+- [Quill JS GitHub repo](https://github.com/quilljs/quill)
 
 ## Configurations
 
-The `QuillToolbar` and `QuillEditor` widgets lets you customize a lot of things
+The `QuillToolbar` and `QuillEditor` widgets let you customize a lot of things
 [Sample Page] provides sample code for advanced usage and configuration.
 
-### Using Custom App Widget
-
-This project use some adaptive widgets like `AdaptiveTextSelectionToolbar` which require the following delegates:
-
-1. Default Material Localizations delegate
-2. Default Cupertino Localizations delegate
-3. Defualt Widgets Localizations delegate
-
-You don't need to include those since there are defined by default
- but if you are using Custom app or you are overriding the `localizationsDelegates` in the App widget
-then please make sure it's including those:
-
-```dart
-localizationsDelegates: const [
-    DefaultCupertinoLocalizations.delegate,
-    DefaultMaterialLocalizations.delegate,
-    DefaultWidgetsLocalizations.delegate,
-],
-```
-
-And you might need more depending on your use case, for example if you are using custom localizations for your app, using custom app widget like `FluentApp` from [FluentUI]
-which will also need
-
-```dart
-localizationsDelegates: const [
-    // Required localizations delegates ...
-    FluentLocalizations.delegate,
-    AppLocalizations.delegate,
-],
-```
-
-in addition to the required delegates by this library
-
-Note: In the latest versions of `FluentApp` you no longer need to add the `localizationsDelegates` but this is just an example, for more [info](https://github.com/bdlukaa/fluent_ui/pull/946)
-
-### Font Size
-
-Within the editor toolbar, a drop-down with font-sizing capabilities is available. This can be enabled or disabled with `showFontSize`.
-
-When enabled, the default font-size values can be modified via _optional_ `fontSizeValues`.  `fontSizeValues` accepts a `Map<String, String>` consisting of a `String` title for the font size and a `String` value for the font size.  Example:
-
-```dart
-fontSizeValues: const {'Small': '8', 'Medium': '24.5', 'Large': '46'}
-```
-
-Font size can be cleared with a value of `0`, for example:
-
-```dart
-fontSizeValues: const {'Small': '8', 'Medium': '24.5', 'Large': '46', 'Clear': '0'}
-```
+### Links
+- [Using Custom App Widget](./doc/configurations/using_custom_app_widget.md)
+- [Localizations Setup](./doc/configurations/localizations_setup.md)
+- [Font Size](./doc/configurations/font_size.md)
+- [Font Family](#font-family)
+- [Custom Toolbar buttons](./doc/configurations/custom_buttons.md)
 
 ### Font Family
 
-To use your own fonts, update your [assets folder](https://github.com/singerdmx/flutter-quill/tree/master/example/assets/fonts) and pass in `fontFamilyValues`. More details at [this change](https://github.com/singerdmx/flutter-quill/commit/71d06f6b7be1b7b6dba2ea48e09fed0d7ff8bbaa), [this article](https://stackoverflow.com/questions/55075834/fontfamily-property-not-working-properly-in-flutter) and [this](https://www.flutterbeads.com/change-font-family-flutter/).
-
-### Custom Buttons
-
-You may add custom buttons to the _end_ of the toolbar, via the `customButtons` option, which is a `List` of `QuillCustomButton`.
-
-To add an Icon, we should use a new QuillCustomButton class
-
-```dart
-    QuillCustomButton(
-        iconData: Icons.ac_unit,
-        onTap: () {
-          debugPrint('snowflake');
-        }
-    ),
-```
-
-Each `QuillCustomButton` is used as part of the `customButtons` option as follows:
-
-```dart
-QuillToolbar(
-  configurations: QuillToolbarConfigurations(
-    customButtons: [
-      QuillCustomButton(
-        iconData: Icons.ac_unit,
-        onTap: () {
-          debugPrint('snowflake1');
-        },
-      ),
-      QuillCustomButton(
-        iconData: Icons.ac_unit,
-        onTap: () {
-          debugPrint('snowflake2');
-        },
-      ),
-      QuillCustomButton(
-        iconData: Icons.ac_unit,
-        onTap: () {
-          debugPrint('snowflake3');
-        },
-      ),
-    ],
-  ),
-),
-```
+To use your own fonts, update your [assets folder](./example/assets/fonts) and pass in `fontFamilyValues`.
+More details on [this commit](https://github.com/singerdmx/flutter-quill/commit/71d06f6b7be1b7b6dba2ea48e09fed0d7ff8bbaa),
+[this article](https://stackoverflow.com/questions/55075834/fontfamily-property-not-working-properly-in-flutter) and [this](https://www.flutterbeads.com/change-font-family-flutter/).
 
 ## Embed Blocks
 
-As of version 6.0, embed blocks are not provided by default as part of this package. Instead, this package provides an interface to all the user to provide there own implementations for embed blocks. Implementations for image, video and formula embed blocks is proved in a separate package [`flutter_quill_extensions`](https://pub.dev/packages/flutter_quill_extensions).
+As of version 6.0, embed blocks are not provided by default as part of this package. Instead, this package provides an interface for all the users to provide their own implementations for embed blocks. Implementations for image, video, and formula embed blocks are proved in a separate package [`flutter_quill_extensions`](https://pub.dev/packages/flutter_quill_extensions).
 
 Provide a list of embed
 
 ### Using the embed blocks from `flutter_quill_extensions`
 
-To see how to use the extensions package, please take a look at the [README](./flutter_quill_extensions/README.md) of [FlutterQuill Extensions]
+To see how to use the extension package, please take a look at the [README](./flutter_quill_extensions/README.md) of [FlutterQuill Extensions]
 
-### Custom Embed Blocks
+### Links
 
-Sometimes you want to add some custom content inside your text, custom widgets inside of them. An example is adding notes to the text, or anything custom that you want to add in your text editor.
-
-Open this [page](./doc/custom_embed_blocks.md) for more info
-
-
-### Custom Toolbar
-If you want to use custom toolbar but still want the support of this libray
-
-Open this [page](./doc/custom_toolbar.md) for more info
-
-### Translation
-
-The package offers translations for the quill toolbar and editor, it will follow the system locale unless you set your own locale.
-
-Open this [page](./doc/translation.md) for more info
+- [Custom Embed Blocks](./doc/custom_embed_blocks.md)
+- [Custom Toolbar](./doc/custom_toolbar.md)
 
 ## Conversion to HTML
 
 Having your document stored in Quill Delta format is sometimes not enough. Often you'll need to convert
-it to other formats such as HTML in order to publish it, or send an email. One option is to use
+it to other formats such as HTML to publish it, or send an email.
+
+**Note**: This package support converting from HTML back to Quill delta but it's experimental and used internally when pasting Html content from the cliboard to the Quill Editor
+
+You have two options:
+
+1. Using [quill_html_converter](./quill_html_converter/) to convert to HTML, the package can convert the Quill delta to HTML well
+(it uses [vsc_quill_delta_to_html](https://pub.dev/packages/vsc_quill_delta_to_html)), it just a handy extension to do it more quickly
+1. Another option is to use
 [vsc_quill_delta_to_html](https://pub.dev/packages/vsc_quill_delta_to_html) to convert your document
-to HTML. This package has full support for all Quill operations - including images, videos, formulas,
-tables, and mentions. Conversion can be performed in vanilla Dart (i.e., server-side or CLI) or in Flutter.
+to HTML.
+   This package has full support for all Quill operations—including images, videos, formulas,
+tables, and mentions.
+   Conversion can be performed in vanilla Dart (i.e., server-side or CLI) or in Flutter.
 It is a complete Dart part of the popular and mature [quill-delta-to-html](https://www.npmjs.com/package/quill-delta-to-html)
 Typescript/Javascript package.
+   this package doesn't convert the HTML back to Quill Delta as far as we know
+
+## Translation
+
+The package offers translations for the quill toolbar and editor, it will follow the system locale unless you set your own locale.
+
+Open this [page](./doc/translation.md) for more info
 
 ## Testing
 
@@ -285,7 +268,7 @@ Please use [flutter_quill_test](https://pub.dev/packages/flutter_quill_test) for
 
 ## Contributors
 
-Special thanks for everyone that have contributed to this project...
+Special thanks to everyone who has contributed to this project...
 
 <a href="https://github.com/singerdmx/flutter-quill/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=singerdmx/flutter-quill" />
@@ -297,7 +280,12 @@ Made with [contrib.rocks](https://contrib.rocks).
 
 We welcome contributions!
 
-Please follow these guidelines when contributing to our project. See [CONTRIBUTING.md](./doc/CONTRIBUTING.md) for more details.
+Please follow these guidelines when contributing to the project. See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details. <br>
+
+We must mention that the [CONTRIBUTING.md](./CONTRIBUTING.md) has development notes, so if you're planning on contributing to the repo, 
+please consider reading it.
+
+You can check the [Todo](./doc/todo.md) list if you want to
 
 [Quill]: https://quilljs.com/docs/formats
 [Flutter]: https://github.com/flutter/flutter
@@ -306,7 +294,4 @@ Please follow these guidelines when contributing to our project. See [CONTRIBUTI
 [ReactQuill]: https://github.com/zenoamaro/react-quill
 [Youtube Playlist]: https://youtube.com/playlist?list=PLbhaS_83B97vONkOAWGJrSXWX58et9zZ2
 [Slack Group]: https://join.slack.com/t/bulletjournal1024/shared_invite/zt-fys7t9hi-ITVU5PGDen1rNRyCjdcQ2g
-[Sample Page]: https://github.com/singerdmx/flutter-quill/blob/master/example/lib/pages/home_page.dart
-[Code Introduction]: https://github.com/singerdmx/flutter-quill/blob/master/doc/CodeIntroduction.md
-[FluentUI]: https://pub.dev/packages/fluent_ui
-
+[Sample Page]: https://github.com/singerdmx/flutter-quill/blob/master/example/lib/screens/quill/quill_screen.dart
