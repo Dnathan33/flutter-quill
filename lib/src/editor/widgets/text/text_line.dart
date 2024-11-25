@@ -30,6 +30,7 @@ class TextLine extends StatefulWidget {
     required this.onLaunchUrl,
     required this.linkActionPicker,
     required this.composingRange,
+    this.index,
     this.textDirection,
     this.customStyleBuilder,
     this.customRecognizerBuilder,
@@ -49,6 +50,7 @@ class TextLine extends StatefulWidget {
   final LinkActionPicker linkActionPicker;
   final List<String> customLinkPrefixes;
   final TextRange composingRange;
+  final int? index;
 
   @override
   State<TextLine> createState() => _TextLineState();
@@ -468,6 +470,22 @@ class _TextLineState extends State<TextLine> {
         nodeStyle.attributes[Attribute.link.key]!.value != null;
     final style =
         _getInlineTextStyle(nodeStyle, defaultStyles, lineStyle, isLink);
+
+    final attrs = widget.line.style.attributes;
+    const whiteSpace = TextSpan(text: ' ');
+
+    var leading = const TextSpan();
+    if (attrs[Attribute.list.key] == Attribute.ol) {
+      leading = TextSpan(text: '${widget.index.toString()}.');
+    } 
+    if (attrs[Attribute.list.key] == Attribute.ul) {
+      leading = TextSpan(
+        text: '•',
+        style:
+            defaultStyles.leading!.style.copyWith(fontWeight: FontWeight.bold),
+      );
+    }
+    
     if (widget.controller.config.requireScriptFontFeatures == false &&
         textNode.value.isNotEmpty) {
       if (nodeStyle.containsKey(Attribute.script.key)) {
@@ -481,7 +499,7 @@ class _TextLineState extends State<TextLine> {
 
     final recognizer = _getRecognizer(node, isLink);
     return TextSpan(
-      text: textNode.value,
+      children: [leading, whiteSpace, TextSpan(text: textNode.value)],
       style: style,
       recognizer: recognizer,
       mouseCursor: (recognizer != null) ? SystemMouseCursors.click : null,

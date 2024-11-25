@@ -184,6 +184,7 @@ class EditableTextBlock extends StatelessWidget {
         ),
         TextLine(
           line: line,
+          index: index,
           textDirection: textDirection,
           embedBuilder: embedBuilder,
           customStyleBuilder: customStyleBuilder,
@@ -328,13 +329,6 @@ class EditableTextBlock extends StatelessWidget {
       }
     }
 
-    if (isOrdered) {
-      return numberPointLeading(leadingConfig);
-    }
-
-    if (isUnordered) {
-      return bulletPointLeading(leadingConfig);
-    }
 
     if (isCheck) {
       return checkboxLeading(leadingConfig);
