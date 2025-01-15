@@ -476,14 +476,14 @@ class _TextLineState extends State<TextLine> {
 
     var leading = const TextSpan();
     if (attrs[Attribute.list.key] == Attribute.ol) {
-      leading = TextSpan(text: '${widget.index.toString()}.');
+      leading = TextSpan(children: [TextSpan(text: '${widget.index.toString()}.'), whiteSpace]);
     } 
     if (attrs[Attribute.list.key] == Attribute.ul) {
-      leading = TextSpan(
+      leading = TextSpan(children: [TextSpan(
         text: '•',
         style:
             defaultStyles.leading!.style.copyWith(fontWeight: FontWeight.bold),
-      );
+      ), whiteSpace]);
     }
     
     if (widget.controller.config.requireScriptFontFeatures == false &&
@@ -499,7 +499,7 @@ class _TextLineState extends State<TextLine> {
 
     final recognizer = _getRecognizer(node, isLink);
     return TextSpan(
-      children: [leading, whiteSpace, TextSpan(text: textNode.value)],
+      children: [leading, TextSpan(text: textNode.value)],
       style: style,
       recognizer: recognizer,
       mouseCursor: (recognizer != null) ? SystemMouseCursors.click : null,
